@@ -1,0 +1,4 @@
+{
+    "calculo1": "10 + 30",
+    "directorios": "10;import os; directorios=os.listdir('/home')"
+}
