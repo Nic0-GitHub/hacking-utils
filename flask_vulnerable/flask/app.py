@@ -1,4 +1,4 @@
-from flask import Flask, abort, flash, render_template, send_file, request, redirect, url_for, session, Response, Request
+from flask import Flask, abort, request, Response
 from flask.logging import default_handler
 from constants import *
 from sys import argv
@@ -30,8 +30,7 @@ werkzeug_logger.disabled = True
 
 @app.route('/')
 def index():
-    return Response('<h1>TODO OK</h1>', HTTPStatus.OK)
-
+    return Response('<h1>Server Prendido</h1>', HTTPStatus.OK)
 
 @app.route('/mensaje', methods=['POST'])
 def mensaje():
