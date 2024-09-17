@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Comentario</title>
+    <style>
+        :root {
+            --bg-color: rgb(60, 60, 60);
+            --text-color: white;
+            --input-bg-color: rgb(90, 90, 90);
+            --input-border-color: rgb(120, 120, 120);
+            --btn-bg-color: rgb(80, 80, 80);
+            --btn-hover-bg-color: rgb(100, 100, 100);
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+        }
+        
+        form {
+            background-color: var(--input-bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        
+        input[type="text"], textarea {
+            width: 80%;
+            padding: 10px;
+            margin: 5px 0 20px;
+            border: 1px solid var(--input-border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+        }
+        
+        input[type="submit"] {
+            background-color: var(--btn-bg-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        input[type="submit"]:hover {
+            background-color: var(--btn-hover-bg-color);
+        }
+    </style>
+</head>
+<body>
+    <h1>Formulario de Comentarios</h1>
+    <form action="/comentario" method="POST">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required>
+        <br><br>
+
+        <label for="comentario">Comentario:</label>
+        <textarea id="comentario" name="comentario" rows="4" cols="25" required></textarea>
+        <br><br>
+
+        <input type="submit" value="Enviar Comentario">
+    </form>
+</body>
+</html>
