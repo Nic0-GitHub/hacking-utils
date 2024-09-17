@@ -1,4 +1,4 @@
-from flask import Flask, abort, request, Response
+from flask import Flask, abort, render_template, request, Response
 from flask.logging import default_handler
 from constants import *
 from sys import argv
@@ -49,7 +49,6 @@ def mensaje():
     app.logger.info(res)
     return Response('Recibido!', HTTPStatus.OK)
 
-
 @app.route('/calcular', methods=['POST'])
 def calcular():
     """Recibe un json con varios parametros, compuestos por:
@@ -69,7 +68,6 @@ def calcular():
         # actualizo la información
         for key in calculos_realizar:
             calculos_realizar[key] = context[key]
-
     except Exception as e:
         error_res = f"Excepción de ejecución del mensaje: {e}"
         app.logger.error(error_res)
@@ -80,7 +78,16 @@ def calcular():
     
     return Response(res, HTTPStatus.OK)
 
-
+@app.route('/comentario', methods=['GET', 'POST'])
+def comentario():
+    match request.method:
+        case 'POST':
+            comentario = request.form['comentario']  # No se sanitiza la entrada
+            return f"<h1>Comentario recibido: {comentario}</h1>"
+        case 'GET':
+            return Response(render_template('comentario.html'))
+        case _:
+            return Response(status=405)
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
