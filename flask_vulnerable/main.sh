@@ -3,6 +3,8 @@
 APP_ROUTE="localhost:5000"
 MENSAJE_URL="$APP_ROUTE/mensaje"
 CALCULAR_URL="$APP_ROUTE/calcular"
+COMENTARIO_URL="$APP_ROUTE/comentario"
+
 
 # Función para mostrar el uso
 mostrar_uso() {

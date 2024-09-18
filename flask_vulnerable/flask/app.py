@@ -88,6 +88,7 @@ def comentario():
             return Response(render_template('comentario.html'))
         case _:
             return Response(status=405)
+
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
