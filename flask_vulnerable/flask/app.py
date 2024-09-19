@@ -1,5 +1,6 @@
 from flask import Flask, abort, render_template, request, Response
 from flask.logging import default_handler
+import random
 from constants import *
 from sys import argv
 from os import path
@@ -11,6 +12,9 @@ import logging
 app = Flask(__name__, template_folder='./static/templates')
 app.logger.setLevel(logging.INFO)
 app.secret_key = SECRET_KEY
+generador = random.Random(SEED)
+
+usuarios = []
 
 # app-logger
 bsc_formatter = logging.Formatter("[%(levelname)s] -> [%(asctime)s]: %(message)s", '%Y-%m-%d %H:%M')
@@ -82,13 +86,46 @@ def calcular():
 def comentario():
     match request.method:
         case 'POST':
-            comentario = request.form['comentario']  # No se sanitiza la entrada
+            # Vulnerabilidad de code injection por falta de sanitización
+            comentario = request.form['comentario']
+            app.logger.info(f"En `/comentario` se envio como parte del formulario: {comentario}")
             return f"<h1>Comentario recibido: {comentario}</h1>"
         case 'GET':
-            return Response(render_template('comentario.html'))
+            comentario_file = 'comentario.html'
+            rendered_template = render_template(comentario_file)
+            app.logger.info(f"Se renderizo {comentario_file}")
+            return Response(rendered_template)
         case _:
-            return Response(status=405)
+            return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
+
+@app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
+def pagina_usuario(usuario):
+    get_nombre = lambda u: u.get('nombre', '')
+    match request.method:
+        case 'GET':
+            # Vulneralibilidad de ataque de enumeración
+            if usuario in map(get_nombre, usuarios):
+                app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
+                return Response(f"<h1>Hola, {usuario}</h1>")
+            return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
+        case 'POST':
+            import string
+            if usuario in map(get_nombre, usuarios):
+                return Response("<h1>usuario invalido</h1>", HTTPStatus.CONFLICT)
+            valid_chars = string.ascii_letters + string.digits
+            # Vulnerabilidad de generación insegura con seed
+            d = {
+                "nombre": usuario,
+                "contraseña": generador.choices(valid_chars, k=15) 
+            }
+            
+            app.logger.info(f"Se creo un nuevo usuario: {usuario}")
+            usuarios.append(d)
+            
+            return Response('usuario creado', HTTPStatus.CREATED)
+
+    
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
