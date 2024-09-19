@@ -1,4 +1,4 @@
-# Vulnerabilidad en el EndPoint `/calcular` con `exec()`
+# Vulnerabilidad de ejecución de código arbitrarío en `/calcular` con `exec()`
 
 ## Descripción
 El código en el endpoint `/calcular` permite a los usuarios enviar un JSON con claves que contienen expresiones matemáticas o código Python para ser ejecutado. Esto se hace a través de la función `exec()` de Python, que ejecuta código arbitrario dentro del contexto del servidor.
@@ -50,7 +50,14 @@ Un atacante con conocimiento podría levantar puertos, borrar archivos, leer inf
 En este caso, si bien usamos una simple muestra de impresión de contenido de directorios se debe tener en cuenta que esta vulnerabilidad da control total al atacante del servidor.
 Jamas, nunca, bajo NINGUN CONCEPTO, se debe permitir la ejecución de código a personal no autorizado con o sin conocimiento técnico dentro del servidor.
 
-# Vulnerabilidad en el EndPoint `/mensaje` con registro de datos sensibles
+### Conclusión
+- Considerar usar herramientas más seguras como `eval()`, librerías especializadas para esto como `ast`.
+- Limitar las funciones que tiene permitido el usuario en caso de obligatoriamente requerir ejecución de código.
+- Usar una maquina virtual para ejecutar el código y solo retornar la información si tiene un formato adecuado.
+- Analizar estrategias para evitar procesamiento por parte del servidor.
+- Restringir los usuarios que tienen permiso de utilizar esta funcionalidad a personal técnico y de confianza si es necesario usar ejecución arbitraría.
+
+# Vulnerabilidad de ejecución de código arbitrarío en `/mensaje` con registro de datos sensibles
 
 ## Descripción
 El código en el endpoint `/mensaje` registra directamente el contenido del mensaje enviado por el usuario en los logs. Esto puede exponer datos sensibles si se almacenan o envían a través del mensaje.
@@ -67,11 +74,13 @@ def mensaje():
     
     if mensaje.startswith('/'):
         res = f"Este mensaje no es valido: '{mensaje}'"
-        app.logger.info(res)  # Vulnerabilidad aquí
+        # Vulnerabilidad aquí
+        app.logger.info(res)
         return Response(res, HTTPStatus.BAD_REQUEST)
     
     res = f"Mensaje recibido '{mensaje}'"
-    app.logger.info(res)  # Vulnerabilidad aquí
+    # Vulnerabilidad aquí
+    app.logger.info(res) 
     return Response('Recibido!', HTTPStatus.OK)
 ```
 
@@ -86,10 +95,14 @@ Si un usuario envía un mensaje con datos sensibles como contraseñas, estos se 
 ### Impacto
 Un usuario sin privilegios puede acceder a información confidencial, esto es sumamente grave para algunos casos criticos,
 esta vulnerabilidad se obviara por motivos didacticos para el resto de endpoints, pero NUNCA es buena idea poner en logs contraseñas o 
-información sensible. En caso de necesitar algún registro es preferible algo como `se cargaron XX caracteres en un mensaje`.
+información sensible.
 
-# Vulnerabilidad en el EndPoint `/mensaje` por falta de validación del tamaño del input
+### Conclusión
+- En caso de necesitar algún registro es preferible algo como `se cargaron XX caracteres en un mensaje`, o clarificar eventos `se recibio un mensaje` pero nunca usar datos introducidos.
+Los logs no deben tener información sensible salvo que se trate de DEBUG por motivos de resolución de errores.
+- Considerar que los logs son para registrar eventos para su posterior correción, no guardan información solo eventos que pasaron.
 
+# Vulnerabilidad de sobrecarga de input en `/mensaje`  por falta de validación de tamaño de entrada.
 
 ## Descripción
 El código en el endpoint /mensaje no verifica el tamaño de la entrada proporcionada por el usuario. Esto permite a un atacante enviar mensajes extremadamente grandes, lo que podría agotar el espacio en disco o los recursos del servidor, resultando en una denegación de servicio (DoS).
@@ -118,13 +131,41 @@ Un atacante podría enviar un mensaje muy grande repetidamente para llenar el es
     }
 ```
 ### Impacto
+
 Podría saturar la red produciendo un ataque de denegación de servicios como tambien podría dejar inutilizable al servidor por tiempo indefinido hasta que un administrador borre los mensajes maliciosos.
 En caso de tener dispositivos de lectura/escritura lentas, podría ocasionar que otros sistemas dentro del mismo servidor se vean bloqueados para guardar archivos incluso habiendo espacio
 disponible.
-Se debe considerar maximos de tamaños para cada usuario antes de considerar guardar su información en el servidor.
+
+### Conclusión
+- Se debe considerar maximos de tamaños para cada usuario antes de considerar guardar su información en el servidor.
+- Se puede rechazar los inputs mayores que cierto tamaño.
 
 
-# Vulnerabilidad en el EndPoint `/usuarios/<usuario>` por Enumeración de Usuarios
+# Vulnerabilidad de introducción de código arbitrarío en  `/mensaje`
+
+## Descripción
+Al no validar el tipo de contenido en el mensaje se permite la introducción de código dentro del servidor, lo que permite cargar todo tipo de contenido, incluyendo caracteres no imprimibles o código
+
+# Ejemplo de explotación
+```json
+    {
+        "mensaje": "ls /home;" # código introducido sin validación
+    }
+```
+
+### Impacto
+En caso de que no se hagan validaciones en otra parte del sistema al validar los mensajes, puede producirse ejecución de código arbitraria en otros lugares.
+Puede que se introduzcan datos no imprimibles que produzcan errores al intentar renderizar la información.
+
+### Conclusión
+- Analizar sintacticamente el input de los usuarios.
+- Quitar caracteres no imprimibles
+- Considerar rechazar contenido que contenga caracteres usados en código (';', '&', '|', '@')
+- Registrar siempre el contenido de este endpoint antes de usarlo o renderizarlo.
+
+
+
+# Vulnerabilidad de ejecución de código arbitrarío en `/usuarios/<usuario>` por Enumeración de Usuarios
 
 ## Descripción
 
@@ -191,3 +232,9 @@ Este tipo de vulnerabilidad permite a un atacante descubrir usuarios válidos en
 Es de grave consideración que la obtención de este tipo de información NO es ilegal para la mayoria de casos, es decir, se considera que este tipo de información es "publica" puesto que
 cualquier usuario/internauta puede acceder a ella desde cualquier lugar sin necesidad de autenticación o validación adicional por lo que los atacantes tienen un agujero legal para obtener 
 información de la organización.
+
+### Conclusión
+- Responder de forma generica para multiples resultados(USUARIO_NOT_FOUND, DATA_FORBIDDEN)
+- Redirigir el trafico a la pagina de inicio de sesión.
+- Limitar las consultas que un ip puede hacer en el día para limitar la potencia del ataque.
+- No usar reglas genericas para la creación de usuarios para dificultar el listado.
