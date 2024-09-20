@@ -1,0 +1,2 @@
+# Utilidad
+Esta carpeta contiene scripts diseñados para explotar vulnerabilidades identificadas en los endpoints de la aplicación `flask_vulnerable`. Los scripts permiten reproducir ataques y probar configuraciones inseguras en el sistema, sirviendo como ejemplos prácticos para demostrar las debilidades de la aplicación y cómo pueden ser explotadas.

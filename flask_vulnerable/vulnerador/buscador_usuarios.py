@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from random import randint as ri
+from constants import *
 import requests
-
 
 """
 Usando información que conocemos de la empresa (por ejemplo que los nombres de usuario son 'usuario_NUMERO')
@@ -10,7 +10,7 @@ en el servidor para listar datos del server.
 En este ejemplo, creamos usuarios aleatorios sin guardar información de los usernames.
 Usando el ataque de enumeración, los obtendremos.
 """
-SERVER_URL="http://localhost:5000"
+
 
 def crear_usuarios_aleatorios(n: int):
     count = 0

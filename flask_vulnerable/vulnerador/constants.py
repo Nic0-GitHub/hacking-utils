@@ -1,0 +1,4 @@
+SERVER_URL="http://localhost:5000"
+CALCULAR_ENDPOINT=f'{SERVER_URL}/calcular'
+USUARIOS_ENDPOINT=f'{SERVER_URL}/usuarios'
+COMENTARIO_ENDPOINT=f'{SERVER_URL}/comentario'
