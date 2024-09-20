@@ -13,6 +13,8 @@ Usando el ataque de enumeración, los obtendremos.
 
 
 def crear_usuarios_aleatorios(n: int):
+    """Creo n usuarios en el sistema para que se puedan listar luego usando la vulnerabilidad
+    de ataque de enumeración"""
     count = 0
     print("Creando usuarios aleatorios")
     for i in range(n):
