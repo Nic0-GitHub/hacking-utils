@@ -1,4 +1,4 @@
-from flask import Flask, abort, render_template, request, Response
+from flask import Flask, abort, jsonify, render_template, request, Response
 from flask.logging import default_handler
 import random
 from constants import *
@@ -117,13 +117,13 @@ def pagina_usuario(usuario):
             # Vulnerabilidad de generación insegura con seed
             d = {
                 "nombre": usuario,
-                "contraseña": generador.choices(valid_chars, k=15) 
+                "password": ''.join(generador.choices(valid_chars, k=15))
             }
             
             app.logger.info(f"Se creo un nuevo usuario: {usuario}")
             usuarios.append(d)
             
-            return Response('usuario creado', HTTPStatus.CREATED)
+            return jsonify(d), HTTPStatus.CREATED
 
     
 def args_parse():
