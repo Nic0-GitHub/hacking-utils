@@ -1,6 +1,8 @@
-from flask import Flask, abort, jsonify, render_template, request, Response
+from flask import Flask, abort, jsonify, redirect, render_template, request, Response, session
 from flask.logging import default_handler
 import random
+
+from flask.sessions import SessionMixin
 from constants import *
 from sys import argv
 from os import path
@@ -31,6 +33,10 @@ app.logger.removeHandler(default_handler)
 
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.disabled = True
+
+def cargar_sesion(session: SessionMixin, usuario):
+    session['nombre'] = usuario['nombre']
+    session['valid'] = True
 
 @app.route('/')
 def index():
@@ -104,11 +110,17 @@ def pagina_usuario(usuario):
     get_nombre = lambda u: u.get('nombre', '')
     match request.method:
         case 'GET':
-            # Vulneralibilidad de ataque de enumeración
             if usuario in map(get_nombre, usuarios):
                 app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
-                return Response(f"<h1>Hola, {usuario}</h1>")
-            return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
+                # si no inicio sesión
+                if not session.get('valid'):
+                    # Vulneralibilidad de ataque de enumeración
+                    return Response(f"<h1>Hola, {usuario} ¡inicia sesión por favor!</h1>")
+                
+                # respuesta si tiene una sesión valida
+                return Response(render_template("pagina_usuario.html", usuario=usuario))
+            
+            return Response(render_template('usuario_no_encontrado.html'),HTTPStatus.NOT_FOUND)
         case 'POST':
             import string
             if usuario in map(get_nombre, usuarios):
@@ -125,7 +137,31 @@ def pagina_usuario(usuario):
             
             return jsonify(d), HTTPStatus.CREATED
 
-    
+@app.route('/iniciar_sesion', methods=['GET', 'POST'])
+def iniciar_sesion():
+    match request.method:
+        case 'GET':
+            return render_template('iniciar_sesion.html')
+        case 'POST':
+            fields_required = ['nombre', 'password']
+            form = request.form
+            if not form or any(field not in form for field in fields_required):
+                abort(HTTPStatus.BAD_REQUEST)
+            for usuario in usuarios:
+                # si el usuario es valido
+                if (usuario['nombre'] == form['nombre']) and (usuario['password'] == form['password']):
+                    #
+                    cargar_sesion(session, usuario)
+                    return redirect(f'/usuarios/{usuario['nombre']}')
+            return Response("credenciales no validas", HTTPStatus.UNAUTHORIZED)
+
+@app.route('/cerrar_sesion', methods=['POST'])
+def cerrar_sesion():
+    if not session.get('valid'):
+        abort(HTTPStatus.BAD_REQUEST)
+    session.pop('valid')
+    return Response("Sesión cerrada", HTTPStatus.OK)
+
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
