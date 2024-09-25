@@ -57,15 +57,15 @@ Jamas, nunca, bajo NINGUN CONCEPTO, se debe permitir la ejecución de código a 
 - Analizar estrategias para evitar procesamiento por parte del servidor.
 - Restringir los usuarios que tienen permiso de utilizar esta funcionalidad a personal técnico y de confianza si es necesario usar ejecución arbitraría.
 
-# Vulnerabilidad de ejecución de código arbitrarío en `/mensaje` con registro de datos sensibles
+# Vulnerabilidad de ejecución de código arbitrarío en `/comentario` con registro de datos sensibles
 
 ## Descripción
-El código en el endpoint `/mensaje` registra directamente el contenido del mensaje enviado por el usuario en los logs. Esto puede exponer datos sensibles si se almacenan o envían a través del mensaje.
+El código en el endpoint `/comentario` registra directamente el contenido del mensaje enviado por el usuario en los logs. Esto puede exponer datos sensibles si se almacenan o envían a través del mensaje.
 
 ### Código vulnerable:
 
 ```python
-@app.route('/mensaje', methods=['POST'])
+@app.route('/comentario', methods=['POST'])
 def mensaje():
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
@@ -102,14 +102,14 @@ información sensible.
 Los logs no deben tener información sensible salvo que se trate de DEBUG por motivos de resolución de errores.
 - Considerar que los logs son para registrar eventos para su posterior correción, no guardan información solo eventos que pasaron.
 
-# Vulnerabilidad de sobrecarga de input en `/mensaje`  por falta de validación de tamaño de entrada.
+# Vulnerabilidad de sobrecarga de input en `/comentario`  por falta de validación de tamaño de entrada.
 
 ## Descripción
-El código en el endpoint /mensaje no verifica el tamaño de la entrada proporcionada por el usuario. Esto permite a un atacante enviar mensajes extremadamente grandes, lo que podría agotar el espacio en disco o los recursos del servidor, resultando en una denegación de servicio (DoS).
+El código en el endpoint /comentario no verifica el tamaño de la entrada proporcionada por el usuario. Esto permite a un atacante enviar mensajes extremadamente grandes, lo que podría agotar el espacio en disco o los recursos del servidor, resultando en una denegación de servicio (DoS).
 
 
 ```python
-@app.route('/mensaje', methods=['POST'])
+@app.route('/comentario', methods=['POST'])
 def mensaje():
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
@@ -141,7 +141,7 @@ disponible.
 - Se puede rechazar los inputs mayores que cierto tamaño.
 
 
-# Vulnerabilidad de introducción de código arbitrarío en  `/mensaje`
+# Vulnerabilidad de introducción de código arbitrarío en  `/comentario`
 
 ## Descripción
 Al no validar el tipo de contenido en el mensaje se permite la introducción de código dentro del servidor, lo que permite cargar todo tipo de contenido, incluyendo caracteres no imprimibles o código
@@ -238,3 +238,56 @@ información de la organización.
 - Redirigir el trafico a la pagina de inicio de sesión.
 - Limitar las consultas que un ip puede hacer en el día para limitar la potencia del ataque.
 - No usar reglas genericas para la creación de usuarios para dificultar el listado.
+
+# Vulnerabilidad de generación insegura de contraseñas en `/usuarios/<usuario>` POST
+
+## Descripción
+Se aprovecha de la generación de valores pseudoaleatoriso con random para encontrar la semilla que genero las contraseñas
+y generar un listado de contraseñas posibles.
+
+### Código vulnerable:
+```python
+@app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
+def pagina_usuario(usuario):
+    get_nombre = lambda u: u.get('nombre', '')
+    match request.method:
+        case 'GET':
+            # Vulneralibilidad de ataque de enumeración
+            if usuario in map(get_nombre, usuarios):
+                app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
+                return Response(f"<h1>Hola, {usuario}</h1>")
+            return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
+        case 'POST':
+            import string
+            if usuario in map(get_nombre, usuarios):
+                return Response("<h1>usuario invalido</h1>", HTTPStatus.CONFLICT)
+            valid_chars = string.ascii_letters + string.digits
+            # Vulnerabilidad de generación insegura con seed
+            d = {
+                "nombre": usuario,
+                "password": ''.join(generador.choices(valid_chars, k=15))
+            }
+            
+            app.logger.info(f"Se creo un nuevo usuario: {usuario}")
+            usuarios.append(d)
+            
+            return jsonify(d), HTTPStatus.CREATED
+```
+
+### Ejemplo de explotación: `buscador_passwords.py`
+Usando asumiciones intenta inferir la seed usada para mostrar contraseñas usadas para la creación de contraseñas en el sistema.
+
+
+### Impacto
+Critico, si un atacante puede obtener la seed de generación de contraseñas podría acceder a todos los usuarios que el sistema genera
+incluyendo los que aún no han sido creados.
+Cabe aclarar que es muy difícil de romper si se esta bien configurado y que puede llegar a requerir enormes capacidades de computo 
+pero resulta una forma efectiva de obtener control de un sistema de forma sencilla.
+Una vez encontrada la seed, TODAS las contraseñas seran vulneradas independientemente del largo de la contraseña generada.
+
+### Conclusión
+- Para la generación de contraseñas es preferible librerías como `secrets` antes que random.
+- El largo de las contraseñas generadas tambien podría ser variable para complicar el hallazgo de la seed.
+- A la hora de usar una seed con random se puede usar una seed de muchos digitos (15 - 20) para evitar la deducción por fuerza bruta.
+- Se puede escojer entre más de un generador (seleccionar uno en base a un numero aleatorio), para que incluso si se encontrara 1,
+solo una pequeña parte de los usuarios sería vulnerada.
