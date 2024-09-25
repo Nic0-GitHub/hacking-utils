@@ -38,8 +38,16 @@ def cargar_sesion(session: SessionMixin, usuario):
     session['nombre'] = usuario['nombre']
     session['valid'] = True
 
+def borrar_sesion(session: SessionMixin):
+    session.clear()    
+
 @app.route('/')
 def index():
+    return redirect('/iniciar_sesion')
+
+
+@app.route('/status')
+def status():
     return Response('<h1>Server Prendido</h1>', HTTPStatus.OK)
 
 @app.route('/mensaje', methods=['POST'])
@@ -67,7 +75,8 @@ def calcular():
     """
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
-        
+    
+    app.logger.info(f"se pidio realizar calcular: {request.json}")
     try:
         calculos_realizar:dict = request.json
         context = {}
@@ -83,7 +92,7 @@ def calcular():
         app.logger.error(error_res)
         return Response(error_res, HTTPStatus.BAD_REQUEST)
     
-    res = f"cuentas realizada:\n{calculos_realizar}"
+    res = f"cuentas realizadas:\n{calculos_realizar}"
     app.logger.info(res)
     
     return Response(res, HTTPStatus.OK)
@@ -150,16 +159,18 @@ def iniciar_sesion():
             for usuario in usuarios:
                 # si el usuario es valido
                 if (usuario['nombre'] == form['nombre']) and (usuario['password'] == form['password']):
-                    #
                     cargar_sesion(session, usuario)
+                    app.logger.info(f"El usuario {usuario['nombre']} inicio sesion")
                     return redirect(f'/usuarios/{usuario['nombre']}')
+                
             return Response("credenciales no validas", HTTPStatus.UNAUTHORIZED)
 
 @app.route('/cerrar_sesion', methods=['POST'])
 def cerrar_sesion():
     if not session.get('valid'):
         abort(HTTPStatus.BAD_REQUEST)
-    session.pop('valid')
+    app.logger.info(f"El usuario {session['nombre']} ha cerrado su sesion")
+    borrar_sesion(session)
     return Response("Sesión cerrada", HTTPStatus.OK)
 
 def args_parse():
