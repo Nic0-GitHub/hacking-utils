@@ -139,17 +139,26 @@ def pagina_usuario(usuario):
     get_nombre = lambda u: u.get('nombre', '')
     match request.method:
         case 'GET':
+            pedir_iniciar_sesion_response = Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="¡inicia sesión por favor!"))
+            usuario_iniciado_distinto_response = Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="¡Esta NO es tu pagina de usuario!"))
             if usuario in map(get_nombre, usuarios):
-                app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
+                
                 # si no inicio sesión
                 if not session.get('valid'):
+                    app.logger.info(f"Se ingreso a la pagina del usuario: {usuario} (se solicito que el usuario inicie sesión)")
                     # Vulneralibilidad de ataque de enumeración
-                    return Response(f"<h1>Hola, {usuario} ¡inicia sesión por favor!</h1>")
+                    return pedir_iniciar_sesion_response
+                
+                if (nombre:=session.get('nombre')) != usuario:
+                    app.logger.info(f"Se ingreso a la pagina del usuario ({usuario}) desde un usuario logeado ({nombre})")
+                    return usuario_iniciado_distinto_response
                 
                 # respuesta si tiene una sesión valida
-                return Response(render_template("pagina_usuario.html", usuario=usuario))
+                return Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="Bienvenido a tu página personal."))
             
+            app.logger.info(f"Se Intento acceder a un usuario inexistente: {usuario}")
             return Response(render_template('usuario_no_encontrado.html'),HTTPStatus.NOT_FOUND)
+        
         case 'POST':
             import string
             if usuario in map(get_nombre, usuarios):
