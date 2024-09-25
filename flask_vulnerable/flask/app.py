@@ -48,10 +48,16 @@ def index():
 
 @app.route('/status')
 def status():
+    """
+        Retorna un 200 para checkear que el server esta encendido
+    """
     return Response('<h1>Server Prendido</h1>', HTTPStatus.OK)
 
 @app.route('/mensaje', methods=['POST'])
 def mensaje():
+    """
+        Permite recibir mensajes para imprimirlos en los logs
+    """
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
     
@@ -69,9 +75,10 @@ def mensaje():
 
 @app.route('/calcular', methods=['POST'])
 def calcular():
-    """Recibe un json con varios parametros, compuestos por:
-        key: operacion_realizar
-    y retorna el resultado de todas las keys
+    """
+        Recibe un json con varios parametros, compuestos por:
+            key: operacion_realizar
+        y retorna el resultado de todas las keys
     """
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
@@ -99,6 +106,12 @@ def calcular():
 
 @app.route('/comentario', methods=['GET', 'POST'])
 def comentario():
+    """
+        GET:
+            Vista con cuestionario que permite llenar un formulario no sanitizado.
+        POST:
+            Carga una pagina con la información del formulario obtenido del get.
+    """
     match request.method:
         case 'POST':
             # Vulnerabilidad de code injection por falta de sanitización
@@ -116,6 +129,13 @@ def comentario():
 
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
 def pagina_usuario(usuario):
+    """
+        GET:
+            Carga la pagina del usuario (Si existe, para pedir que inicie sesion)
+            En caso de estar loggeado muestra una pagina personalizada para el usuario.
+        POST:
+            Permite crear un usuario si el username esta disponible, retorna un json con nombre de usuario y pass generada para ese usuario.
+    """
     get_nombre = lambda u: u.get('nombre', '')
     match request.method:
         case 'GET':
@@ -148,6 +168,12 @@ def pagina_usuario(usuario):
 
 @app.route('/iniciar_sesion', methods=['GET', 'POST'])
 def iniciar_sesion():
+    """
+        GET:
+            vista para iniciar sesion
+        POST:
+            checkea valores y permite iniciar sesión
+    """
     match request.method:
         case 'GET':
             return render_template('iniciar_sesion.html')
@@ -167,6 +193,9 @@ def iniciar_sesion():
 
 @app.route('/cerrar_sesion', methods=['POST'])
 def cerrar_sesion():
+    """
+        Borra las cookies de la sesión, borrando las credenciales para el sistema.
+    """
     if not session.get('valid'):
         abort(HTTPStatus.BAD_REQUEST)
     app.logger.info(f"El usuario {session['nombre']} ha cerrado su sesion")
