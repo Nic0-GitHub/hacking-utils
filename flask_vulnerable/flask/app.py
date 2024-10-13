@@ -7,6 +7,7 @@ from os import path
 from http import HTTPStatus
 import argparse
 import logging
+from database import Database, Usuario
 
 # app
 app = Flask(__name__, template_folder='./static/templates')
@@ -14,7 +15,7 @@ app.logger.setLevel(logging.INFO)
 app.secret_key = SECRET_KEY
 generador = random.Random(SEED)
 
-usuarios = []
+db = Database()
 
 # app-logger
 bsc_formatter = logging.Formatter("[%(levelname)s] -> [%(asctime)s]: %(message)s", '%Y-%m-%d %H:%M')
@@ -72,6 +73,7 @@ def calcular():
         # actualizo la información
         for key in calculos_realizar:
             calculos_realizar[key] = context[key]
+    
     except Exception as e:
         error_res = f"Excepción de ejecución del mensaje: {e}"
         app.logger.error(error_res)
@@ -111,27 +113,37 @@ def comentario():
 
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
 def pagina_usuario(usuario):
-    get_nombre = lambda u: u.get('nombre', '')
+    usuarios_nombres = map(get_nombre, db.obtener_usuarios())
+    get_nombre = lambda u: u.nombre
     match request.method:
         case 'GET':
             # Vulneralibilidad de ataque de enumeración
-            if usuario in map(get_nombre, usuarios):
+            if usuario in usuarios_nombres:
                 app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
                 return Response(f"<h1>Hola, {usuario}</h1>")
             return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
+        
         case 'POST':
+            # caso nombre de usuario ya usado
+            if usuario in usuarios_nombres:
+                app.logger.error(f"El usuario `{usuario_nuevo.nombre}` ya existe, no se pudo crear usuario")
+                return Response("<h1>Ese usuario ya esta registrado</h1>", HTTPStatus.CONFLICT)
+
             import string
-            if usuario in map(get_nombre, usuarios):
-                return Response("<h1>usuario invalido</h1>", HTTPStatus.CONFLICT)
             valid_chars = string.ascii_letters + string.digits
             # Vulnerabilidad de generación insegura con seed
             d = {
                 "nombre": usuario,
                 "password": ''.join(generador.choices(valid_chars, k=15))
             }
+            usuario_nuevo = Usuario(None, **d)
+            try:
+                db.crear_usuario(usuario_nuevo)
+            except ValueError:
+                app.logger.error(f"El usuario `{usuario_nuevo.nombre}` ya existe, no se pudo crear usuario")
+                abort(HTTPStatus.BAD_REQUEST)
             
             app.logger.info(f"Se creo un nuevo usuario: {usuario}")
-            usuarios.append(d)
             return jsonify(d), HTTPStatus.CREATED
 
 @app.route('/iniciar_sesion', methods=['GET'])
@@ -144,8 +156,8 @@ def iniciar_sesion():
             if not request.is_json or any(field not in request.json for field in fields_required):
                 abort(HTTPStatus.BAD_REQUEST)
             data = request.json
-            for usuario in usuarios:
-                if (usuario['nombre'] == data['nombre']) and (usuario['password'] == data['password']):
+            for usuario in db.obtener_usuarios():
+                if (usuario.nombre == data['nombre']) and (usuario.password == data['password']):
                     session['valid'] = True
                     return Response("Sesión iniciada", HTTPStatus.OK)
             abort(HTTPStatus.OK)
