@@ -112,7 +112,3 @@ class Database:
 
 if __name__ == '__main__':
     db = Database()
-    #db.crear_usuario(Usuario(None, "Nico", '123'))
-    u = db.obtener_usuario('Nico')
-    u.password = "capooooo"
-    db.actualizar_usuario(u)
