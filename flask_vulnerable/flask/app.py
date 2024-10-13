@@ -1,13 +1,14 @@
-from flask import Flask, abort, jsonify, render_template, request, Response, session
+from flask import Flask, abort, jsonify, redirect, render_template, request, Response, session
 from flask.logging import default_handler
-import random
+from flask.sessions import SessionMixin
+from database import Database, Usuario
+from http import HTTPStatus
 from constants import *
+import random
 from sys import argv
 from os import path
-from http import HTTPStatus
 import argparse
 import logging
-from database import Database, Usuario
 
 # app
 app = Flask(__name__, template_folder='./static/templates')
@@ -33,12 +34,29 @@ app.logger.removeHandler(default_handler)
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.disabled = True
 
+def crear_session(session: SessionMixin, usuario: Usuario):
+    """
+    Carga los datos de una sesión
+    """
+    session['nombre'] = usuario.nombre
+    session['valid'] = True
+    
+def borrar_session(session: SessionMixin):
+    """
+    Borra los datos de la sesión
+    """
+    session.pop('nombre')
+    session.pop('valid')
+
 @app.route('/')
 def index():
     return Response('<h1>Server Prendido</h1>', HTTPStatus.OK)
 
 @app.route('/mensaje', methods=['POST'])
 def mensaje():
+    """
+    Permite enviar mensajes al servidor
+    """
     if not request.is_json:
         abort(HTTPStatus.BAD_REQUEST)
     
@@ -56,7 +74,8 @@ def mensaje():
 
 @app.route('/calcular', methods=['POST'])
 def calcular():
-    """Recibe un json con varios parametros, compuestos por:
+    """
+    Recibe un json con varios parametros, compuestos por:
         key: operacion_realizar
     y retorna el resultado de todas las keys
     """
@@ -86,6 +105,9 @@ def calcular():
 
 @app.route("/info_request", methods=['GET'])
 def info_request():
+    """
+    Recolecta la información del request y la imprime tanto en logs como para el cliente.
+    """
     datos = {}
     for key, item in request.headers.items():
         datos[key] = item
@@ -96,6 +118,9 @@ def info_request():
 
 @app.route('/comentario', methods=['GET', 'POST'])
 def comentario():
+    """
+    Permite que los usuarios manden un mensaje en un formulario insanatizado.
+    """
     match request.method:
         case 'POST':
             # Vulnerabilidad de code injection por falta de sanitización
@@ -112,16 +137,22 @@ def comentario():
 
 
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
-def pagina_usuario(usuario):
+def pagina_usuario(usuario: str):
+    """
+    
+    """
+    pagina_usuario_file = 'pagina_usuario.html'
     get_nombre = lambda u: u.nombre
     usuarios_nombres = map(get_nombre, db.obtener_usuarios())
-    get_nombre = lambda u: u.nombre
     match request.method:
         case 'GET':
             # Vulneralibilidad de ataque de enumeración
             if usuario in usuarios_nombres:
                 app.logger.info(f"Se accedio a la pagina del usuario: {usuario}")
-                return Response(f"<h1>Hola, {usuario}</h1>")
+                mensaje = "Sesión iniciada" if session.get('nombre') == usuario else ''
+                return render_template(pagina_usuario_file, usuario=usuario, mensaje=mensaje)
+            
+            app.logger.error(f"Se busco un usuario inexistente: {usuario}")
             return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
         
         case 'POST':
@@ -147,22 +178,29 @@ def pagina_usuario(usuario):
             app.logger.info(f"Se creo un nuevo usuario: {usuario}")
             return jsonify(d), HTTPStatus.CREATED
 
-@app.route('/iniciar_sesion', methods=['GET'])
+@app.route('/iniciar_sesion', methods=['GET', 'POST'])
 def iniciar_sesion():
     match request.method:
         case 'GET':
             return render_template('iniciar_sesion.html')
         case 'POST':
             fields_required = ['nombre', 'password']
-            if not request.is_json or any(field not in request.json for field in fields_required):
+            if not request.form or any( (field not in request.form) for field in fields_required ):
+                app.logger.error(f"Hubo un error de pasaje del form de inicio de sesión `{request.form}`")
                 abort(HTTPStatus.BAD_REQUEST)
-            data = request.json
+                
+            data = request.form
             for usuario in db.obtener_usuarios():
                 if (usuario.nombre == data['nombre']) and (usuario.password == data['password']):
                     session['valid'] = True
-                    return Response("Sesión iniciada", HTTPStatus.OK)
-            abort(HTTPStatus.OK)
+                    return redirect(f'/usuarios/{usuario.nombre}')
             
+            return Response("Contraseña incorrecta", HTTPStatus.OK)
+
+@app.route('/admin', methods=['GET'])
+def admin_page():
+    
+    return render_template('admin_page.html')        
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
@@ -180,6 +218,8 @@ if __name__ == '__main__':
     app.logger.disabled = no_logs
     app.logger.debug(f"Running on http://{host_selected}:{port_selected}")
     
-    db.reiniciar_usuarios()
+    if not debug_mode:
+        db.reiniciar_usuarios()
+        
     # running the APP :P
     app.run(host=host_selected, port=port_selected, debug=debug_mode)

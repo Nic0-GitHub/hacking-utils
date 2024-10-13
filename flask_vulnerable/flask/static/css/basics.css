@@ -1,0 +1,57 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9; /* Fondo claro para todas las páginas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Altura de la ventana */
+    margin: 0;
+    padding: 0;
+}
+
+.container, .form-container, .user-container, .error-container, .login-container {
+    background-color: #fff; /* Fondo blanco general para todos los contenedores */
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+}
+
+h1, h2 {
+    color: #333;
+    text-align: center;
+}
+
+p {
+    color: #555;
+}
+
+form input[type="text"], form input[type="password"], form textarea {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+form button, .container button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover, .container button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+    .container, .form-container, .user-container, .login-container {
+        width: 90%;
+    }
+}
