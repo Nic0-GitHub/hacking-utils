@@ -119,7 +119,10 @@ def info_request():
 @app.route('/comentario', methods=['GET', 'POST'])
 def comentario():
     """
-    Permite que los usuarios manden un mensaje en un formulario insanatizado.
+        GET:
+            Vista con cuestionario que permite llenar un formulario no sanitizado.
+        POST:
+            Carga una pagina con la información del formulario obtenido del get.
     """
     match request.method:
         case 'POST':
@@ -139,7 +142,11 @@ def comentario():
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
 def pagina_usuario(usuario: str):
     """
-    
+        GET:
+            Carga la pagina del usuario (Si existe, para pedir que inicie sesion)
+            En caso de estar loggeado muestra una pagina personalizada para el usuario.
+        POST:
+            Permite crear un usuario si el username esta disponible, retorna un json con nombre de usuario y pass generada para ese usuario.
     """
     pagina_usuario_file = 'pagina_usuario.html'
     get_nombre = lambda u: u.nombre
@@ -180,6 +187,12 @@ def pagina_usuario(usuario: str):
 
 @app.route('/iniciar_sesion', methods=['GET', 'POST'])
 def iniciar_sesion():
+    """
+        GET:
+            vista para iniciar sesion
+        POST:
+            checkea valores y permite iniciar sesión
+    """
     match request.method:
         case 'GET':
             return render_template('iniciar_sesion.html')
