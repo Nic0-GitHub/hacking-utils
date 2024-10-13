@@ -21,6 +21,10 @@ class Database:
             password TEXT NOT NULL
         );
     """
+    sql_actualizar_usuario_password = """\
+        UPDATE usuarios SET password=?
+        WHERE id = ?;    
+    """
     sql_borrar_registros_usuarios = """\
         DELETE FROM usuarios;
     """
@@ -81,7 +85,14 @@ class Database:
             return Usuario(id, nombre, password)
         
         return None
-
+    
+    def actualizar_usuario(self, usuario: Usuario):
+        """Actualiza al usuario pasado en la base de datos"""
+        if not usuario.id:
+            raise ValueError("No se puede actualizar un usuario con id nulo")
+        self.cursor.execute(self.sql_actualizar_usuario_password, (usuario.password, usuario.id))
+        self.connection.commit()
+        
     def reiniciar_usuarios(self):
         """Borra la tabla de usuarios para empezar de 0"""
         self.cursor.execute(self.sql_borrar_tabla_usuarios)
@@ -101,4 +112,7 @@ class Database:
 
 if __name__ == '__main__':
     db = Database()
-    
+    #db.crear_usuario(Usuario(None, "Nico", '123'))
+    u = db.obtener_usuario('Nico')
+    u.password = "capooooo"
+    db.actualizar_usuario(u)
