@@ -113,6 +113,7 @@ def comentario():
 
 @app.route('/usuarios/<usuario>', methods=['GET', 'POST'])
 def pagina_usuario(usuario):
+    get_nombre = lambda u: u.nombre
     usuarios_nombres = map(get_nombre, db.obtener_usuarios())
     get_nombre = lambda u: u.nombre
     match request.method:
@@ -179,5 +180,6 @@ if __name__ == '__main__':
     app.logger.disabled = no_logs
     app.logger.debug(f"Running on http://{host_selected}:{port_selected}")
     
+    db.reiniciar_usuarios()
     # running the APP :P
     app.run(host=host_selected, port=port_selected, debug=debug_mode)

@@ -47,7 +47,7 @@ class Database:
             if not os.path.exists(DB_PATH):
                 with open(DB_PATH, 'x') as file:
                     pass
-            self.connection = sqlite3.connect(DB_PATH)
+            self.connection = sqlite3.connect(DB_PATH, check_same_thread=False)
             self.cursor = self.connection.cursor()
             self.crear_tabla()
 
