@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos de la Request</title>
+    <link rel="stylesheet" href="/static/css/styles.css"> <!-- Enlazar CSS -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            max-width: 90%; 
+            margin: 2rem auto; 
+            word-wrap: break-word;
+        }
+
+        .container h1 {
+            color: #333;
+            text-align: center;
+            font-size: 2rem; 
+        }
+
+        .data-item {
+            margin-bottom: 1rem; 
+            font-size: 1.2rem; 
+        }
+
+        .data-item strong {
+            color: #555;
+        }
+
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+            .data-item {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Datos Recibidos</h1>
+        {% if datos %}
+            <ul>
+                {% for key, value in datos.items() %}
+                <li class="data-item"><strong>{{ key }}:</strong> {{ value }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No se recibieron datos.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
