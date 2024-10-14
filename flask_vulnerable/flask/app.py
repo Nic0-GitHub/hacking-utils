@@ -113,7 +113,9 @@ def info_request():
         datos[key] = item
     datos['ip'] = request.remote_addr
     
-    app.logger.info(f"información de la request de info_request: {request.headers};{request.remote_addr};")
+    app.logger.info(f"El ip: {request.remote_addr} pidio información sobre los headers enviados al server.")
+    app.logger.debug(f"información de la request de info_request: {request.headers};{request.remote_addr};")
+    
     return render_template('info_request.html', datos=datos)
 
 @app.route('/comentario', methods=['GET', 'POST'])
