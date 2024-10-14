@@ -58,6 +58,7 @@ def mensaje():
     Permite enviar mensajes al servidor
     """
     if not request.is_json:
+        app.logger.debug(f"Se envio un request invalido a /mensaje: '{request.json}'")
         abort(HTTPStatus.BAD_REQUEST)
     
     mensaje:str = request.json['mensaje']
@@ -80,6 +81,7 @@ def calcular():
     y retorna el resultado de todas las keys
     """
     if not request.is_json:
+        app.logger.debug(f"Se envio un request invalido a /calcular: '{request.json}'")
         abort(HTTPStatus.BAD_REQUEST)
         
     try:
