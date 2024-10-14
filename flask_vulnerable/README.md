@@ -11,7 +11,7 @@ Asegúrate de tener instalado lo siguiente en tu sistema:
    Abre una terminal y ejecuta el siguiente comando para clonar el repositorio:
 
    ```bash
-   git clone https://github.com/Nic0-GitHub/hacking-flask_vulnerable
+   git clone https://github.com/Nic0-GitHub/hacking-utils
    ```
 2. **Navega a la carpeta del proyecto**
     crea un entorno virtual para python
