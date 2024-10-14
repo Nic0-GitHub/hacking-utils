@@ -136,6 +136,7 @@ def comentario():
             app.logger.info(f"Se renderizo {comentario_file}")
             return Response(rendered_template)
         case _:
+            app.logger.debug(f"Se intento entrar a /comentario con un metodo no compatible: {_}")
             return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
 
@@ -159,8 +160,8 @@ def pagina_usuario(usuario: str):
                 mensaje = "Sesión iniciada" if session.get('nombre') == usuario else ''
                 return render_template(pagina_usuario_file, usuario=usuario, mensaje=mensaje)
             
-            app.logger.error(f"Se busco un usuario inexistente: {usuario}")
-            return Response("<h1>usuario no encontrado</h1>",HTTPStatus.NOT_FOUND)
+            app.logger.debug(f"Se busco un usuario inexistente: {usuario}")
+            return Response(render_template('usuario_no_encontrado.html', usuario=usuario), HTTPStatus.NOT_FOUND)
         
         case 'POST':
             # caso nombre de usuario ya usado
@@ -178,6 +179,7 @@ def pagina_usuario(usuario: str):
             usuario_nuevo = Usuario(None, **d)
             try:
                 db.crear_usuario(usuario_nuevo)
+                app.logger.debug(f"Se creo un usuario en la db, `{usuario_nuevo.nombre}`")
             except ValueError:
                 app.logger.error(f"El usuario `{usuario_nuevo.nombre}` ya existe, no se pudo crear usuario")
                 abort(HTTPStatus.BAD_REQUEST)
@@ -195,6 +197,7 @@ def iniciar_sesion():
     """
     match request.method:
         case 'GET':
+            app.logger.debug("Se renderizo la pagina de iniciar sesión")
             return render_template('iniciar_sesion.html')
         case 'POST':
             fields_required = ['nombre', 'password']
@@ -206,6 +209,7 @@ def iniciar_sesion():
             for usuario in db.obtener_usuarios():
                 if (usuario.nombre == data['nombre']) and (usuario.password == data['password']):
                     crear_session(session, usuario)
+                    app.logger.debug(f"Se creo la sesión para el usuario {usuario.nombre}")
                     return redirect(f'/usuarios/{usuario.nombre}')
             
             return Response("Contraseña incorrecta", HTTPStatus.OK)
@@ -242,6 +246,7 @@ def restablecer_password():
                     db.actualizar_usuario(usuario)
                     app.logger.info(f"Contraseña de {usuario_actual} restablecida con éxito.")
                     limpiar_session(session)
+                    app.logger.debug(f"Se limpio la sesión del usuario {usuario_actual}")
                     return Response(f"Contraseña restablecida exitosamente para {usuario_actual}", HTTPStatus.OK)
             
             # Si no encuentra el usuario, se retorna un error
