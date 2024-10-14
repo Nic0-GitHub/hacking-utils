@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación de Rutas de la Aplicación</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Documentación de Rutas de la Aplicación Flask</h1>
+        <p>Esta documentación incluye todas las rutas disponibles en la aplicación, junto con una descripción y ejemplos de uso.
+        Para más detalles tambien puede leer el <strong>README.md</strong> en la documentación para encontrar la información
+        de como explotar las vulnerabilidades que hay en la aplicación.
+        </p>
+
+        <table class="table table-striped table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Ruta</th>
+                    <th>Método</th>
+                    <th>Descripción</th>
+                    <th>Ejemplo de Petición</th>
+                    <th>Respuesta</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>/calcular</td>
+                    <td>
+                        <span class="badge bg-primary">POST</span>
+                    </td>
+                    <td>Ejecuta expresiones matemáticas o código Python enviados en formato JSON.</td>
+                    <td>
+                        <code>
+                            {
+                                "calculo1": "10 + 30",
+                                "calculo2": "5 * 6"
+                            }
+                        </code>
+                    </td>
+                    <td>
+                        <code>
+                            {
+                                "calculo1": 40,
+                                "calculo2": 30
+                            }
+                        </code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>/comentario</td>
+                    <td>
+                        <span class="badge bg-primary">POST</span>
+                    </td>
+                    <td>Registra comentarios del usuario y puede exponer datos sensibles.</td>
+                    <td>
+                        <code>
+                            [form]: "comentario" = "Esto es un comentario"
+                        </code>
+                    </td>
+                    <td>
+                        <code>
+                            html, 200
+                        </code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>/usuarios/&lt;usuario&gt;</td>
+                    <td>
+                        <span class="badge bg-success">GET</span>
+                        <span class="badge bg-primary">POST</span>
+                    </td>
+                    <td>Consulta información de un usuario específico o crea un nuevo usuario.</td>
+                    <td>
+                        <code>
+                            GET:  /usuarios/usuario1
+                        </code><br>
+                        <code>
+                            POST: /usuarios/usuario2
+                        </code>
+                    </td>
+                    <td>
+                        <code>GET: html, 200</code>
+                        <br>
+                        <code>POST: {"usuario": "usuario2", "password": "pass123"}</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>/mensaje</td>
+                    <td>
+                        <span class="badge bg-primary">POST</span>
+                    </td>
+                    <td>
+                        Permite enviar un mensaje al servidor.
+                    </td>
+                    <td>
+                        <code>
+                            {
+                                "mensaje": "Hola mundo"
+                            }
+                        </code>
+                    </td>
+                    <td>
+                        <code>
+                            "Recibido", 200
+                        </code>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="mt-5">Consideraciones de Seguridad</h2>
+        <p>Algunas de las vulnerabilidades que fueron implementadas son extremadamente peligrosas en las manos incorrectas
+        NO se recomienda ejecutar la aplicación en entornos/redes vulnerables.</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

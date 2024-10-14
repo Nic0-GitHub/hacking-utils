@@ -41,7 +41,7 @@ def crear_session(session: SessionMixin, usuario: Usuario):
     session['nombre'] = usuario.nombre
     session['valid'] = True
     
-def borrar_session(session: SessionMixin):
+def limpiar_session(session: SessionMixin):
     """
     Borra los datos de la sesión
     """
@@ -50,7 +50,7 @@ def borrar_session(session: SessionMixin):
 
 @app.route('/')
 def index():
-    return Response('<h1>Server Prendido</h1>', HTTPStatus.OK)
+    return render_template('pagina_inicio.html')
 
 @app.route('/mensaje', methods=['POST'])
 def mensaje():
@@ -205,15 +205,53 @@ def iniciar_sesion():
             data = request.form
             for usuario in db.obtener_usuarios():
                 if (usuario.nombre == data['nombre']) and (usuario.password == data['password']):
-                    session['valid'] = True
+                    crear_session(session, usuario)
                     return redirect(f'/usuarios/{usuario.nombre}')
             
             return Response("Contraseña incorrecta", HTTPStatus.OK)
 
 @app.route('/admin', methods=['GET'])
 def admin_page():
-    
-    return render_template('admin_page.html')        
+    raise NotImplementedError
+    return render_template('admin_page.html')
+
+
+@app.route('/restablecer_password', methods=['GET', 'POST'])
+def restablecer_password():
+      
+    # Rechazo solicitud si no esta logeado
+    if not session.get('valid'):
+        abort(HTTPStatus.UNAUTHORIZED)
+        
+    usuario_actual = session.get('nombre')
+    match request.method:
+        case 'GET':
+            return render_template('restablecer_password.html', usuario=usuario_actual)
+        
+        case 'POST':
+            usuarios = db.obtener_usuarios()
+            nueva_password = request.form.get('nueva_password')
+            if not nueva_password or len(nueva_password) < 8:
+                app.logger.info(f"Intento fallido de restablecer contraseña para {usuario_actual}: Contraseña no válida.")
+                return Response("Contraseña no válida. Debe tener al menos 8 caracteres.", HTTPStatus.BAD_REQUEST)
+            
+            # Buscar el usuario en la lista y actualizar la contraseña
+            for usuario in usuarios:
+                if usuario.nombre == usuario_actual:
+                    usuario.password = nueva_password
+                    db.actualizar_usuario(usuario)
+                    app.logger.info(f"Contraseña de {usuario_actual} restablecida con éxito.")
+                    limpiar_session(session)
+                    return Response(f"Contraseña restablecida exitosamente para {usuario_actual}", HTTPStatus.OK)
+            
+            # Si no encuentra el usuario, se retorna un error
+            app.logger.error(f"Error inesperado: Usuario {usuario_actual} no encontrado.")
+            return Response("Error inesperado.", HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    return render_template('restablecer_password.html', usuario=usuario_actual)
+
+
+     
 def args_parse():
     parser = argparse.ArgumentParser(description="Process command line arguments.")
     parser.add_argument('-p', '--port', type=int, default=5000, help='Port number to run the server on')
