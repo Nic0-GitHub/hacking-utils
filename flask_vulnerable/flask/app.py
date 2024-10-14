@@ -229,6 +229,7 @@ def restablecer_password():
       
     # Rechazo solicitud si no esta logeado
     if not session.get('valid'):
+        app.logger.debug("Una request sin sesión intento iniciar sesión")
         abort(HTTPStatus.UNAUTHORIZED)
         
     usuario_actual = session.get('nombre')
