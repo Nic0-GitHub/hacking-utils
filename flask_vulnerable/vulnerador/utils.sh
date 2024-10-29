@@ -40,6 +40,18 @@ function obtener_usuario() {
     echo "$resultado"
 }
 
+function formatear_python() {
+    if [[ -z "$1" ]]; then
+        echo "Uso: formatear_python <nombre_del_archivo>"
+        return 1
+    fi
+
+    # Procesa el archivo con sed y lo guarda con el mismo nombre pero con la extensión .pyf (python formated)
+    archivo_formateado="${1%.*}_formated.pyf"
+    sed ':a;N;$!ba;s/\n/\\n/g' "$1" | tee "$archivo_formateado"
+    #    echo "Salida guardada en '$archivo_formateado'"
+}
+
 # Ejemplo de uso
 # crear_usuario "nuevo_usuario"
 # enviar_mensaje "Hola, esto es un mensaje."
